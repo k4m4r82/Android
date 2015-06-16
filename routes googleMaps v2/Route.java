@@ -1,4 +1,4 @@
-package your-package;
+package you package;
 
 
 import java.io.UnsupportedEncodingException;
@@ -24,17 +24,6 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 
-/**
- * 
- * @author zeeshan0026 and Fernando Valle 
- * http://stackoverflow.com/users/1547539/zeeshan0026
- * http://stackoverflow.com/users/1826257/fernando-valle
- */
-
-
-//for set language look at the web: https://spreadsheets.google.com/spreadsheet/pub?key=0Ah0xU81penP1cDlwZHdzYWkyaERNc0xrWHNvTTA1S1E&gid=1
-// example Spanish "es". 
-
 public class Route {
 	 GoogleMap mMap;
 	 Context context;
@@ -52,6 +41,8 @@ public class Route {
 	 static String TRANSPORT_WALKING = "walking";
 	 static String TRANSPORT_BIKE = "bicycling";
 	 static String TRANSPORT_TRANSIT = "transit";
+	 public Polyline line;
+	 List<Polyline> polylines = new ArrayList<Polyline>();
 	 
 	 
 	 public boolean drawRoute(GoogleMap map, Context c, ArrayList<LatLng> points, boolean withIndications, String language, boolean optimize)
@@ -128,11 +119,16 @@ public class Route {
 	 {
 		 mMap = map;
 		 context = c;
+		 if (line != null) {
+			line.remove();
+			
+		}
 		 
 		 String url = makeURL(source.latitude,source.longitude,dest.latitude,dest.longitude,"driving");
 		 new connectAsyncTask(url,withIndications).execute();
 		 lang = language;
 		 
+	
 	 }
 	 
 	 
@@ -218,6 +214,16 @@ public class Route {
 	        return urlString.toString();
 	 }
 	 
+	 public void clearRoute(){
+		 
+		 for(Polyline line1 : polylines)
+		 {
+		     line1.remove();
+		 }
+
+		 polylines.clear();
+		 
+	 }
 	 
 	 
 	 
@@ -269,7 +275,7 @@ public class Route {
 		    }
 		    @Override
 		    protected void onPreExecute() {
-		        // TODO Auto-generated method stub
+		       
 		        super.onPreExecute();
 		        progressDialog = new ProgressDialog(context);
 		        progressDialog.setMessage("Fetching route, Please wait...");
@@ -295,21 +301,33 @@ public class Route {
 	 private void drawPath(String  result, boolean withSteps) {
 
 		    try {
+		    	clearRoute();
+		    	
 		            //Tranform the string into a json object
 		           final JSONObject json = new JSONObject(result);
 		           JSONArray routeArray = json.getJSONArray("routes");
+		           
 		           JSONObject routes = routeArray.getJSONObject(0);
 		           JSONObject overviewPolylines = routes.getJSONObject("overview_polyline");
 		           String encodedString = overviewPolylines.getString("points");
 		           List<LatLng> list = decodePoly(encodedString);
+		           
+		           
+		           if (line != null) {
+					line.remove();
+				}
+		           
+		           
 
 		           for(int z = 0; z<list.size()-1;z++){
+		        	  
 		                LatLng src= list.get(z);
 		                LatLng dest= list.get(z+1);
-		                Polyline line = mMap.addPolyline(new PolylineOptions()
+		                line = mMap.addPolyline(new PolylineOptions()
 		                .add(new LatLng(src.latitude, src.longitude), new LatLng(dest.latitude,   dest.longitude))
-		                .width(4)
-		                .color(Color.BLUE).geodesic(true));
+		                .width(9)
+		                .color(Color.RED).geodesic(true));
+		                polylines.add(line);
 		            }
 		           
 		           
@@ -331,13 +349,13 @@ public class Route {
 		
 		        	   }
 		           }
+		           
 
 		    } 
 		    catch (JSONException e) {
 
 		    }
 		} 
-	 
 	 
 	 /**
 	  * Class that represent every step of the directions. It store distance, location and instructions
@@ -359,19 +377,16 @@ public class Route {
 				try {
 					instructions = URLDecoder.decode(Html.fromHtml(stepJSON.getString("html_instructions")).toString(), "UTF-8");
 				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
+					
 					e.printStackTrace();
 				};
 				
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
+				
 				e.printStackTrace();
 			}
 		 }		 
 	 }
 	 
 	 
-	 
-	 
-
 }
